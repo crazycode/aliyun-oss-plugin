@@ -3,4 +3,6 @@
 .metadata
 .classpath
 work
-target
+/target
+/.idea
+*.iml
