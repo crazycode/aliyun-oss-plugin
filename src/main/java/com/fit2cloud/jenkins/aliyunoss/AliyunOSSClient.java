@@ -46,22 +46,26 @@ public class AliyunOSSClient {
     public static void download(AbstractBuild<?, ?> build, BuildListener listener,
                                 final String aliyunAccessKey, final String aliyunSecretKey,
                                 final String aliyunEndPointSuffix, String bucketName,
-                                String remoteFilePath) throws AliyunOSSException {
+                                String remoteFilePaths) throws AliyunOSSException {
         OSSClient client = new OSSClient(aliyunAccessKey, aliyunSecretKey);
         String location = client.getBucketLocation(bucketName);
         String endpoint = "http://" + location + aliyunEndPointSuffix;
         client = new OSSClient(endpoint, aliyunAccessKey, aliyunSecretKey);
 
         try {
-            remoteFilePath = Utils.replaceTokens(build, listener, remoteFilePath);
-            GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, remoteFilePath);
+            StringTokenizer strTokens = new StringTokenizer(remoteFilePaths, fpSeparator);
+            while (strTokens.hasMoreElements()) {
+                String remoteFilePath = Utils.replaceTokens(build, listener, strTokens.nextToken());
+                GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, remoteFilePath);
 
-            String localFileName = remoteFilePath.substring(remoteFilePath.lastIndexOf('/') + 1);
+                String localFileName = remoteFilePath.substring(remoteFilePath.lastIndexOf('/') + 1);
 
-            listener.getLogger().println("开始下载 " + bucketName + " 中的 " + remoteFilePath + " 到本地");
-            listener.getLogger().println("下载的 endpoint 是：" + endpoint);
-            client.getObject(getObjectRequest,
-                             new File(new File(build.getWorkspace().toURI()), localFileName));
+                listener.getLogger()
+                    .println("开始下载 " + bucketName + " 中的 " + remoteFilePath + " 到本地");
+                listener.getLogger().println("下载的 endpoint 是：" + endpoint);
+                client.getObject(getObjectRequest,
+                                 new File(new File(build.getWorkspace().toURI()), localFileName));
+            }
         } catch (Exception e) {
             e.printStackTrace();
             throw new AliyunOSSException(e.getMessage(), e.getCause());
